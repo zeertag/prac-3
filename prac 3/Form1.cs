@@ -112,44 +112,60 @@ namespace prac_3
         }
 
 
-        public class TreeNodeInfo
+        public class SceletNode
         {
             public int X, Y;
             public int Depth;
+            public List<SceletNode> Children = new List<SceletNode>();
         }
 
-        private void DrawScelet(Graphics g, int x, int y, int n, int stop, int totalWidth)
+        private SceletNode root;
+
+        private void BuildTree(SceletNode node, int maxDepth, int totalWidth, int numChildren, int dy)
         {
-            int dy = 60;
-            int radius = 6;
+            if (node.Depth >= maxDepth - 1)
+                return;
 
-            nodes.Add((x, y, n));
-
-            int r = Math.Abs((255 - (n+1) * 30) % 256);
-            int gr = Math.Abs((255 - (n+1) * 80) % 256);
-            int b = Math.Abs((255 - (n + 1) * 80) % 256);
-
-            g.FillEllipse(new SolidBrush(Color.FromArgb(r, gr, b)), x - radius, y - radius, 2 * radius, 2 * radius);
-            g.DrawEllipse(Pens.Black, x - radius, y - radius, 2 * radius, 2 * radius);
-
-            if (n >= stop - 1) return;
-
-            int numChildren = 4;
-            int level = n + 1;
+            int level = node.Depth + 1;
             int levelNodes = (int)Math.Pow(numChildren, level);
-
             int spacing = totalWidth / levelNodes;
 
-            int baseX = x - ((spacing * (numChildren - 1)) / 2);
-            int childY = y + dy;
+            int baseX = node.X - ((spacing * (numChildren - 1)) / 2);
+            int childY = node.Y + dy;
 
             for (int i = 0; i < numChildren; i++)
             {
                 int childX = baseX + i * spacing;
 
-                g.DrawLine(Pens.Black, x, y + radius, childX, childY - radius);
+                var child = new SceletNode
+                {
+                    X = childX,
+                    Y = childY,
+                    Depth = level
+                };
 
-                DrawScelet(g, childX, childY, n + 1, stop, totalWidth);
+                node.Children.Add(child);
+                BuildTree(child, maxDepth, totalWidth, numChildren, dy);
+            }
+        }
+
+        private void DrawTreeFromNode(Graphics g, SceletNode node)
+        {
+            int radius = 6;
+
+            int r = Math.Abs((255 - (node.Depth + 1) * 30) % 256);
+            int gr = Math.Abs((255 - (node.Depth + 1) * 80) % 256);
+            int b = Math.Abs((255 - (node.Depth + 1) * 80) % 256);
+
+            g.FillEllipse(new SolidBrush(Color.FromArgb(r, gr, b)), node.X - radius, node.Y - radius, 2 * radius, 2 * radius);
+            g.DrawEllipse(Pens.Black, node.X - radius, node.Y - radius, 2 * radius, 2 * radius);
+
+            nodes.Add((node.X, node.Y, node.Depth));
+
+            foreach (var child in node.Children)
+            {
+                g.DrawLine(Pens.Black, node.X, node.Y + radius, child.X, child.Y - radius);
+                DrawTreeFromNode(g, child);
             }
         }
 
@@ -159,15 +175,24 @@ namespace prac_3
 
             using (Graphics g = Graphics.FromImage(bmp))
             {
-                g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+                g.SmoothingMode = SmoothingMode.AntiAlias;
                 g.Clear(Color.White);
 
                 int depth = 6;
                 int margin = 20;
                 int totalWidth = pictureBox2.Width - 2 * margin;
+                int startX = pictureBox2.Width / 2;
+                int startY = 30;
+                int dy = 60;
+                int numChildren = 4;
 
+                // Шаг 1: Строим дерево с координатами
+                root = new SceletNode { X = startX, Y = startY, Depth = 0 };
+                BuildTree(root, depth, totalWidth, numChildren, dy);
+
+                // Шаг 2: Отрисовываем дерево
                 nodes.Clear();
-                DrawScelet(g, pictureBox2.Width / 2, 30, 0, depth, totalWidth);
+                DrawTreeFromNode(g, root);
             }
 
             pictureBox2.Image = bmp;
