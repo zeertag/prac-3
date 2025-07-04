@@ -125,7 +125,11 @@ namespace prac_3
 
             nodes.Add((x, y, n));
 
-            g.FillEllipse(Brushes.LightGreen, x - radius, y - radius, 2 * radius, 2 * radius);
+            int r = Math.Abs((255 - (n+1) * 30) % 256);
+            int gr = Math.Abs((255 - (n+1) * 80) % 256);
+            int b = Math.Abs((255 - (n + 1) * 80) % 256);
+
+            g.FillEllipse(new SolidBrush(Color.FromArgb(r, gr, b)), x - radius, y - radius, 2 * radius, 2 * radius);
             g.DrawEllipse(Pens.Black, x - radius, y - radius, 2 * radius, 2 * radius);
 
             if (n >= stop - 1) return;
